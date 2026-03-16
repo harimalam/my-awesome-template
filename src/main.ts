@@ -1,11 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from '@/app.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -31,7 +32,7 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT ?? 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`Application is running on: http://localhost:${port}`);
   logger.log(`Documentation available at: http://localhost:${port}/docs`);
