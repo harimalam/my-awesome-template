@@ -36,7 +36,9 @@
     "@swc/core": "^1.15.18",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "drizzle-orm": "^0.45.1",
     "fastify": "^5.8.2",
+    "postgres": "^3.4.8",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
@@ -46,9 +48,11 @@
     "@nestjs/cli": "^11.0.16",
     "@nestjs/schematics": "^11.0.9",
     "@nestjs/testing": "^11.1.16",
+    "@swc/jest": "^0.2.39",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",
     "@types/supertest": "^7.2.0",
+    "drizzle-kit": "^0.31.9",
     "eslint": "^10.0.3",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
@@ -59,7 +63,6 @@
     "prettier": "^3.8.1",
     "source-map-support": "^0.5.21",
     "supertest": "^7.2.2",
-    "ts-jest": "^29.4.6",
     "ts-loader": "^9.5.4",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
@@ -75,7 +78,7 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": "@swc/jest"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s",
@@ -95,12 +98,16 @@
   "pnpm": {
     "overrides": {
       "@angular-devkit/core>ajv": "^8.18.0",
-      "file-type": "^21.3.2"
+      "file-type": "^21.3.2",
+      "chokidar": "^5.0.0",
+      "class-validator": "^0.15.1",
+      "@swc/cli": "^0.8.0"
     },
     "onlyBuiltDependencies": [
       "@nestjs/core",
       "@scarf/scarf",
       "@swc/core",
+      "esbuild",
       "unrs-resolver"
     ]
   }
