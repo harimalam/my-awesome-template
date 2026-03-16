@@ -1,28 +1,26 @@
 {
-    "$schema": "https://swc.rs/schema.json",
-    "jsc": {
-        "parser": {
-            "syntax": "typescript",
-            "decorators": true,
-            "dynamicImport": true
-        },
-        "transform": {
-            "legacyDecorator": true,
-            "decoratorMetadata": true
-        },
-        "target": "es2023",
-        "keepClassNames": true,
-        "baseUrl": "./",
-        "paths": {
-            "@/*": [
-                "src/*"
-            ]
-        }
+  "$schema": "https://swc.rs/schema.json",
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "decorators": true,
+      "dynamicImport": true
     },
-    "module": {
-        "type": "commonjs",
-        "strict": true,
-        "noInterop": false
+    "transform": {
+      "legacyDecorator": true,
+      "decoratorMetadata": true
     },
-    "sourceMaps": true
+    "target": "es2023",
+    "keepClassNames": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "module": {
+    "type": "commonjs",
+    "strict": true,
+    "noInterop": false
+  },
+  "sourceMaps": true
 }
