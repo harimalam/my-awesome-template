@@ -1,11 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from '@/app.module';
+import { AppModule } from './app.module';
+import { CustomLogger } from '@common/utils/custom-logger.util';
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
+  const logger = new CustomLogger('Bootstrap');
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
   app.useGlobalPipes(

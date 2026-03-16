@@ -3,15 +3,13 @@
     "module": "CommonJS",
     "moduleResolution": "Node",
     "target": "ES2023",
-    "lib": [
-      "ES2023"
-    ],
+    "lib": ["ES2023"],
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@common/*": ["src/common/*"],
+      "@core/*": ["src/modules/core/*"],
+      "@api/*": ["src/modules/api/*"]
     },
     /* Strictness - Industry Standard */
     "strict": true,

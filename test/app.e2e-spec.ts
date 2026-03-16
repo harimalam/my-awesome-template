@@ -33,7 +33,7 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/health')
       .expect(200)
-      .expect((res) => {
+      .expect((res: { body: { status: string } }) => {
         if (res.body.status !== 'ok') throw new Error('Status not ok');
       });
   });

@@ -18,6 +18,7 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -28,6 +29,7 @@
   "dependencies": {
     "@fastify/static": "^9.0.0",
     "@nestjs/common": "^11.1.16",
+    "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.1.16",
     "@nestjs/platform-fastify": "^11.1.16",
     "@nestjs/swagger": "^11.2.6",
@@ -40,7 +42,8 @@
     "fastify": "^5.8.2",
     "postgres": "^3.4.8",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
@@ -52,6 +55,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",
     "@types/supertest": "^7.2.0",
+    "dotenv": "^17.3.1",
     "drizzle-kit": "^0.31.9",
     "eslint": "^10.0.3",
     "eslint-config-prettier": "^10.1.8",
