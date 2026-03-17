@@ -4,6 +4,7 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { CustomLogger } from '@common/utils/custom-logger.util';
+import { MigrationService } from '@core/database/migration.service';
 
 async function bootstrap() {
   const logger = new CustomLogger('Bootstrap');
@@ -31,6 +32,9 @@ async function bootstrap() {
       persistAuthorization: true,
     },
   });
+
+  const migrationService = app.get(MigrationService, { strict: false });
+  await migrationService.run();
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port, '0.0.0.0');

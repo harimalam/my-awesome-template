@@ -13,7 +13,6 @@ export const DrizzleProvider = {
     const logger = new CustomLogger('DatabaseModule');
     const databaseUrl = configService.get('DATABASE_URL');
     const nodeEnv = configService.get('NODE_ENV');
-    logger.log(`Initializing database connection in ${nodeEnv.toUpperCase()} mode...`);
 
     const queryClient = postgres(databaseUrl, {
       onnotice: (notice) => logger.verbose(`Postgres Notice: ${notice.message}`),

@@ -2,8 +2,6 @@
 /dist
 /node_modules
 /build
-
-pnpm-lock.yaml
 metadata.ts
 
 # Logs

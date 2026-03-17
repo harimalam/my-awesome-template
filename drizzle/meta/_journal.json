@@ -8,6 +8,13 @@
       "when": 1773661519516,
       "tag": "0000_simple_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773725806707,
+      "tag": "0001_faulty_scrambler",
+      "breakpoints": true
     }
   ]
 }
