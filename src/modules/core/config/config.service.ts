@@ -9,4 +9,15 @@ export class ConfigService {
   get<T extends keyof Env>(key: T): Env[T] {
     return this.configService.get(key, { infer: true });
   }
+
+  get apiHost(): string {
+    const apiHost = this.get('API_HOST');
+    const port = this.get('PORT');
+
+    if (apiHost) {
+      return apiHost.startsWith('http') ? apiHost : `https://${apiHost}`;
+    }
+
+    return `http://localhost:${port}`;
+  }
 }

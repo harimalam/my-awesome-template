@@ -11,6 +11,11 @@ export const envSchema = z.object({
   ENABLE_SWAGGER: z.coerce.boolean().default(true),
   RUN_MIGRATIONS: z.coerce.boolean().default(true),
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug', 'verbose']).default('info'),
+  REDIS_HOST: z.string(),
+  REDIS_PORT: z.coerce.number().int().min(1).max(65535),
+  REDIS_PASSWORD: z.string().optional(),
+  RATE_LIMIT_DEFAULT: z.coerce.number().int().min(1).max(65535).default(360),
+  API_HOST: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

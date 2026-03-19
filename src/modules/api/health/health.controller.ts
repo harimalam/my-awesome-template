@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { HealthCheckService, HealthCheck, HealthCheckResult, MemoryHealthIndicator } from '@nestjs/terminus';
 import { Inject } from '@nestjs/common';
 import { DRIZZLE } from '@core/database/database.provider';
@@ -7,8 +7,10 @@ import * as schema from '@core/database/schemas';
 import * as os from 'os';
 import { ConfigService } from '@core/config/config.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @ApiTags('System')
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   constructor(
@@ -18,9 +20,11 @@ export class HealthController {
     private memory: MemoryHealthIndicator,
     private readonly configService: ConfigService,
   ) {}
+
   @ApiOperation({ summary: 'Check application health' })
   @Get()
   @HealthCheck()
+  @HttpCode(HttpStatus.OK)
   async check(): Promise<HealthCheckResult> {
     return this.health.check([
       // 1. Database: Hard Fail (If DB is down, app is useless)

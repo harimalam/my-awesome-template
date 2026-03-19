@@ -13,6 +13,7 @@ services:
     networks:
       - database
       - proxy
+      - cache
 
     healthcheck:
       test:
@@ -40,4 +41,8 @@ networks:
 
   proxy:
     name: proxy-net
+    external: true
+
+  cache:
+    name: cache-net
     external: true

@@ -1,14 +1,17 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe, VersioningType } from '@nestjs/common';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { CustomLogger } from '@common/utils/custom-logger.util';
 import { MigrationService } from '@core/database/migration.service';
+import { ConfigService } from '@core/config/config.service';
 
 async function bootstrap() {
   const logger = new CustomLogger('Bootstrap');
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({ trustProxy: true }));
+
+  const configService = app.get(ConfigService);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -17,6 +20,17 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: '', method: RequestMethod.GET },
+      { path: 'health', method: RequestMethod.GET },
+    ],
+  });
+
+  app.enableVersioning({
+    type: VersioningType.URI,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('My Awesome API')
@@ -27,7 +41,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('docs', app, document, {
+  SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
     },
@@ -36,11 +50,12 @@ async function bootstrap() {
   const migrationService = app.get(MigrationService, { strict: false });
   await migrationService.run();
 
-  const port = process.env.PORT ?? 3000;
+  const port = configService.get('PORT');
+  const apiHost = configService.apiHost;
   await app.listen(port, '0.0.0.0');
 
-  logger.log(`Application is running on: http://localhost:${port}`);
-  logger.log(`Documentation available at: http://localhost:${port}/docs`);
+  logger.log(`Application is running on: ${apiHost}`);
+  logger.log(`Documentation available at: ${apiHost}/api/docs`);
 }
 
 bootstrap().catch((err) => {
