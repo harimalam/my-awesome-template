@@ -5,12 +5,12 @@ export class CustomLogger extends ConsoleLogger {
     super(context);
   }
 
-  log(message: any, context?: string) {
+  log(message: any) {
     const color = '\x1b[36m'; // Cyan
     const reset = '\x1b[0m';
 
     const formattedMessage = `${color}${message}${reset}`;
 
-    super.log(formattedMessage, context || 'DatabaseModule');
+    super.log(formattedMessage, this.context);
   }
 }

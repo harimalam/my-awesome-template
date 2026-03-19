@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, ServiceUnavailableException } from '@nestjs/common';
 import { HealthCheckService, HealthCheck, HealthCheckResult, MemoryHealthIndicator } from '@nestjs/terminus';
 import { Inject } from '@nestjs/common';
 import { DRIZZLE } from '@core/database/database.provider';
@@ -8,6 +8,7 @@ import * as os from 'os';
 import { ConfigService } from '@core/config/config.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
+import { RedisService } from '@core/redis/redis.service';
 
 @ApiTags('System')
 @SkipThrottle()
@@ -19,28 +20,88 @@ export class HealthController {
     private health: HealthCheckService,
     private memory: MemoryHealthIndicator,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {}
 
   @ApiOperation({ summary: 'Check application health' })
   @Get()
   @HealthCheck()
   @HttpCode(HttpStatus.OK)
+  async checkLiveness(): Promise<{ status: string; timestamp: string }> {
+    try {
+      const status = await this.check();
+      return {
+        status: status.status,
+        timestamp: new Date().toISOString(),
+      };
+    } catch {
+      throw new ServiceUnavailableException({
+        status: 'error',
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
+  @ApiOperation({ summary: 'Check application health details' })
+  @Get('details')
+  @HealthCheck()
+  @HttpCode(HttpStatus.OK)
   async check(): Promise<HealthCheckResult> {
     return this.health.check([
-      // 1. Database: Hard Fail (If DB is down, app is useless)
+      // Database: Hard Fail (If DB is down, app is useless)
       async () => {
         const dbUrl = this.configService.get('DATABASE_URL');
         const { hostname, port, pathname } = new URL(dbUrl);
         const name = pathname.replace('/', '');
         try {
+          // In postgres.js, the result IS the array of rows.
+          const res = (await this.db.execute('SELECT version() AS version')) as unknown as Array<{ version: string }>;
+
+          // Access the first element directly, no .rows property
+          const version = res[0]?.version ?? 'unknown';
+
           await this.db.execute('SELECT 1');
-          return { database: { status: 'up', host: hostname, port, name } };
+
+          return { database: { status: 'up', host: hostname, port, name, version: `v${version}` } };
         } catch (e) {
           return { database: { status: 'down', host: hostname, message: (e as Error).message } };
         }
       },
 
-      // 2. Memory: Hard Fail at 90% (Critical for OOM prevention)
+      // Redis: Check if redis is up
+      async () => {
+        try {
+          const info = await this.redisService.redis.info('server'); // raw info string
+          const versionMatch = info.match(/redis_version:(.+)/);
+          const version = versionMatch ? versionMatch[1] : 'unknown';
+          const result = await this.redisService.ping();
+
+          const host = this.configService.get('REDIS_HOST');
+          const port = this.configService.get('REDIS_PORT');
+
+          if (result !== 'PONG') {
+            throw new Error('Unexpected ping response');
+          }
+
+          return {
+            redis: {
+              status: 'up',
+              host,
+              port,
+              version: `v${version}`,
+            },
+          };
+        } catch (e) {
+          return {
+            redis: {
+              status: 'down',
+              message: (e as Error).message,
+            },
+          };
+        }
+      },
+
+      // Memory: Hard Fail at 90% (Critical for OOM prevention)
       async () => {
         const total = os.totalmem();
         const threshold = total * 0.9;
@@ -66,7 +127,7 @@ export class HealthController {
         }
       },
 
-      // 3. CPU: Informative (Diagnostics only)
+      // CPU: Informative (Diagnostics only)
       () => {
         const load = os.loadavg()[0];
         const cores = os.cpus().length;
@@ -83,7 +144,7 @@ export class HealthController {
         };
       },
 
-      // 4. Process Metadata
+      // Process Metadata
       () => ({
         process: {
           status: 'up',

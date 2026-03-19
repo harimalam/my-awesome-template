@@ -1,19 +1,25 @@
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
-import { Redis } from 'ioredis';
+import Redis from 'ioredis';
 import { REDIS_CLIENT } from './redis.constants';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
-  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {}
+  constructor(
+    @Inject(REDIS_CLIENT)
+    public readonly redis: Redis,
+  ) {}
 
-  onModuleDestroy(): void {
-    this.redis.disconnect();
+  async onModuleDestroy(): Promise<void> {
+    await this.redis.quit();
+  }
+
+  async ping(): Promise<string> {
+    return this.redis.ping();
   }
 
   async get<T>(key: string): Promise<T | null> {
     const data = await this.redis.get(key);
-
-    if (!data) return null;
+    if (data === null) return null;
 
     try {
       return JSON.parse(data) as T;
@@ -22,23 +28,49 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
-  async set(key: string, value: unknown, ttl?: number): Promise<void> {
+  async set(key: string, value: unknown, ttl?: number): Promise<'OK'> {
     const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
 
-    if (ttl) {
-      await this.redis.set(key, stringValue, 'EX', ttl);
-    } else {
-      await this.redis.set(key, stringValue);
+    if (ttl !== undefined) {
+      return this.redis.set(key, stringValue, 'EX', ttl);
     }
+
+    return this.redis.set(key, stringValue);
   }
 
-  async del(key: string): Promise<void> {
-    await this.redis.del(key);
+  async del(key: string): Promise<number> {
+    return this.redis.del(key);
   }
 
-  async delMany(keys: string[]): Promise<void> {
-    if (!keys.length) return;
-    await this.redis.del(...keys);
+  async delMany(keys: string[]): Promise<number> {
+    if (!keys.length) return 0;
+    return this.redis.del(...keys);
+  }
+
+  async exists(key: string): Promise<boolean> {
+    return (await this.redis.exists(key)) === 1;
+  }
+
+  async ttl(key: string): Promise<number> {
+    return this.redis.ttl(key);
+  }
+
+  async incr(key: string): Promise<number> {
+    return this.redis.incr(key);
+  }
+
+  async mget<T>(keys: string[]): Promise<(T | null)[]> {
+    const values = await this.redis.mget(...keys);
+
+    return values.map((v) => {
+      if (v === null) return null;
+
+      try {
+        return JSON.parse(v) as T;
+      } catch {
+        return v as unknown as T;
+      }
+    });
   }
 
   async delByPattern(pattern: string): Promise<void> {
@@ -47,44 +79,25 @@ export class RedisService implements OnModuleDestroy {
       count: 100,
     });
 
-    const pipeline = this.redis.pipeline();
-
     return new Promise((resolve, reject) => {
       stream.on('data', (keys: string[]) => {
-        if (keys.length) {
-          keys.forEach((key) => pipeline.del(key));
-        }
+        if (!keys.length) return;
+
+        const pipeline = this.redis.pipeline();
+        keys.forEach((key) => pipeline.del(key));
+
+        void pipeline.exec().catch((err: unknown) => {
+          const error = err instanceof Error ? err : new Error(String(err));
+
+          stream.destroy(error);
+        });
       });
 
-      stream.on('end', () => {
-        void pipeline.exec().then(
-          () => resolve(),
-          (err) => reject(err instanceof Error ? err : new Error(String(err))),
-        );
-      });
+      stream.on('end', () => resolve());
 
       stream.on('error', (err) => {
-        reject(err);
+        reject(err instanceof Error ? err : new Error(String(err)));
       });
     });
-  }
-
-  async exists(key: string): Promise<boolean> {
-    const result = await this.redis.exists(key);
-    return result === 1;
-  }
-
-  async ttl(key: string): Promise<number> {
-    return this.redis.ttl(key);
-  }
-
-  async incr(key: string): Promise<number> {
-    const result = await this.redis.incr(key);
-    return result;
-  }
-
-  async mget<T>(keys: string[]): Promise<(T | null)[]> {
-    const values = await this.redis.mget(keys);
-    return values.map((v) => (v ? (JSON.parse(v) as T) : null));
   }
 }
