@@ -108,6 +108,7 @@
   },
   "pnpm": {
     "overrides": {
+      "flatted": "^3.4.2",
       "@angular-devkit/core>ajv": "^8.18.0",
       "file-type": "^21.3.2",
       "chokidar": "^5.0.0",
