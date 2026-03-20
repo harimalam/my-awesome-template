@@ -18,8 +18,9 @@ export class UsersCache {
   async invalidateUserLists(): Promise<void> {
     await this.redisService.incr(this.LIST_VERSION_KEY);
   }
-
-  // --- Individual User Cache ---
+  async invalidateUser(id: string): Promise<void> {
+    await this.redisService.del(`user:${id}`);
+  }
 
   async getUsersByIds(ids: string[]): Promise<(PublicUser | null)[]> {
     if (!ids.length) return [];
@@ -38,12 +39,6 @@ export class UsersCache {
   async setUser(user: PublicUser): Promise<void> {
     await this.redisService.set(`user:${user.id}`, user, this.USER_TTL);
   }
-
-  async invalidateUser(id: string): Promise<void> {
-    await this.redisService.del(`user:${id}`);
-  }
-
-  // --- List Cache ---
 
   async getUserList(page: number, limit: number, orderBy: string) {
     const v = await this.getVersion();

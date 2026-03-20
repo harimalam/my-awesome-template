@@ -6,9 +6,10 @@ import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from '@core/database/schemas';
 import * as os from 'os';
 import { ConfigService } from '@core/config/config.service';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { RedisService } from '@core/redis/redis.service';
+import { HealthResponseDto } from './dto/health-response.dto';
 
 @ApiTags('System')
 @SkipThrottle()
@@ -25,19 +26,23 @@ export class HealthController {
 
   @ApiOperation({ summary: 'Check application health' })
   @Get()
-  @HealthCheck()
   @HttpCode(HttpStatus.OK)
-  async checkLiveness(): Promise<{ status: string; timestamp: string }> {
+  @ApiOkResponse({ type: HealthResponseDto })
+  @ApiServiceUnavailableResponse({ type: HealthResponseDto })
+  async checkLiveness(): Promise<HealthResponseDto> {
+    const timestamp = new Date().toISOString();
+
     try {
-      const status = await this.check();
+      const result = await this.check();
+
       return {
-        status: status.status,
-        timestamp: new Date().toISOString(),
+        status: result.status === 'ok' ? 'ok' : 'error',
+        timestamp,
       };
     } catch {
       throw new ServiceUnavailableException({
         status: 'error',
-        timestamp: new Date().toISOString(),
+        timestamp,
       });
     }
   }
