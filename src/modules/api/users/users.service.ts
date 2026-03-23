@@ -1,16 +1,15 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto, UpdateUserDto } from './dto/users.dto';
 import { PublicUser, User } from '@core/database/schemas';
 import { UsersCache } from './users.cache';
 import * as bcrypt from 'bcrypt';
-import { CustomLogger } from '@common/utils/custom-logger.util';
 import { SortOrder } from '@common/enums/sort-order.enum';
 
 @Injectable()
 export class UsersService {
   private readonly SALT_ROUNDS = 10;
-  private readonly logger = new CustomLogger(UsersService.name);
+  private readonly logger = new Logger('UsersService');
 
   constructor(
     private readonly usersRepository: UsersRepository,

@@ -3,11 +3,11 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { ConfigService } from '@core/config/config.service';
-import { CustomLogger } from '@common/utils/custom-logger.util';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class MigrationService {
-  private readonly logger = new CustomLogger(MigrationService.name);
+  private readonly logger = new Logger(MigrationService.name);
 
   constructor(private configService: ConfigService) {}
 

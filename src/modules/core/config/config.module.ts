@@ -1,5 +1,6 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Logger, Module } from '@nestjs/common';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
+import { z } from 'zod';
 import { ConfigService } from './config.service';
 import { envSchema } from './env.schema';
 
@@ -10,10 +11,15 @@ import { envSchema } from './env.schema';
       isGlobal: true,
       validate: (config) => {
         const result = envSchema.safeParse(config);
+        const logger = new Logger('ConfigModule');
+
         if (!result.success) {
-          console.error('Invalid environment variables:', result.error.format());
+          const formattedError = z.treeifyError(result.error);
+
+          logger.error('Invalid environment variables:', formattedError);
           throw new Error('Environment validation failed');
         }
+
         return result.data;
       },
     }),

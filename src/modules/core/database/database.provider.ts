@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { ConfigService } from '../config/config.service';
 import * as schema from './schemas';
-import { CustomLogger } from '@common/utils/custom-logger.util';
+import { Logger } from '@nestjs/common';
 
 export const DRIZZLE = Symbol('DRIZZLE_CLIENT');
 
@@ -10,7 +10,7 @@ export const DrizzleProvider = {
   provide: DRIZZLE,
   inject: [ConfigService],
   useFactory: async (configService: ConfigService) => {
-    const logger = new CustomLogger('DatabaseModule');
+    const logger = new Logger('DatabaseModule');
     const databaseUrl = configService.get('DATABASE_URL');
     const nodeEnv = configService.get('NODE_ENV');
 

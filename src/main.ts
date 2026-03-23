@@ -1,15 +1,18 @@
 import { NestFactory } from '@nestjs/core';
-import { RequestMethod, ValidationPipe, VersioningType } from '@nestjs/common';
+import { Logger, RequestMethod, ValidationPipe, VersioningType } from '@nestjs/common';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { CustomLogger } from '@common/utils/custom-logger.util';
 import { MigrationService } from '@core/database/migration.service';
 import { ConfigService } from '@core/config/config.service';
+import { winstonLogger } from './common/utils/logger';
 
 async function bootstrap() {
-  const logger = new CustomLogger(bootstrap.name);
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({ trustProxy: true }));
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({ trustProxy: true }), {
+    logger: winstonLogger,
+  });
+  const logger = new Logger('Bootstrap');
+
   app.enableShutdownHooks();
 
   const configService = app.get(ConfigService);
