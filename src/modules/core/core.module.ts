@@ -8,6 +8,7 @@ import { ConfigService } from './config/config.service';
 import { DatabaseModule } from './database/database.module';
 import { RedisModule } from './redis/redis.module';
 import { REDIS_CLIENT } from './redis/redis.constants';
+import { MailModule } from './mail/mail.module';
 
 @Global()
 @Module({
@@ -15,6 +16,7 @@ import { REDIS_CLIENT } from './redis/redis.constants';
     ConfigModule,
     DatabaseModule,
     RedisModule,
+    MailModule,
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule, RedisModule],
       inject: [ConfigService, REDIS_CLIENT],
