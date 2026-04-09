@@ -1,19 +1,27 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto, UpdateUserDto } from './dto/users.dto';
 import { PublicUser, User } from '@core/database/schemas';
 import { UsersCache } from './users.cache';
-import * as bcrypt from 'bcrypt';
 import { SortOrder } from '@common/enums/sort-order.enum';
+import { RolesService } from '@api/roles/roles.service';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class UsersService {
-  private readonly SALT_ROUNDS = 10;
+  private readonly argon2Options = {
+    type: argon2.argon2id,
+    memoryCost: 12288, // 12 MB
+    timeCost: 2, // 2 iterations
+    parallelism: 1, // 1 thread
+  };
+
   private readonly logger = new Logger('UsersService');
 
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly usersCache: UsersCache,
+    private readonly rolesService: RolesService,
   ) {}
 
   private toPublic(user: User): PublicUser {
@@ -71,8 +79,16 @@ export class UsersService {
     const existing = await this.usersRepository.findOneActiveByEmail(dto.email);
     if (existing) throw new ConflictException('User with this email already exists');
 
-    const hashedPassword = await bcrypt.hash(dto.password, await bcrypt.genSalt(this.SALT_ROUNDS));
-    const user = await this.usersRepository.create({ ...dto, password: hashedPassword });
+    const defaultRole = await this.rolesService.getRoleWithPermissions('USER');
+    if (!defaultRole) throw new InternalServerErrorException('Default Role not initialized');
+
+    const hashedPassword = await argon2.hash(dto.password, this.argon2Options);
+
+    const user = await this.usersRepository.create({
+      ...dto,
+      password: hashedPassword,
+      roleId: defaultRole.id,
+    });
 
     const publicUser = this.toPublic(user);
     await Promise.all([this.usersCache.setUser(publicUser), this.usersCache.invalidateUserLists()]);
@@ -97,7 +113,7 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     const publicUser = this.toPublic(user);
-    await Promise.all([this.usersCache.invalidateUser(id)]);
+    await Promise.all([this.usersCache.invalidateUser(id), this.usersCache.invalidateUserPermissions(id)]);
     return publicUser;
   }
 
@@ -168,5 +184,21 @@ export class UsersService {
       data: result.data,
       meta: { hasNextPage: !!result.nextCursor, nextCursor: result.nextCursor, limit },
     };
+  }
+
+  async getUserPermissions(userId: string) {
+    const cached = await this.usersCache.getUserPermissions(userId);
+    if (cached) return cached;
+
+    const userPermissions = await this.usersRepository.findUserWithPermissions(userId);
+    if (!userPermissions) return { role: null, permissions: [] };
+
+    const data = {
+      role: userPermissions.role,
+      permissions: userPermissions.permissions,
+    };
+
+    await this.usersCache.setUserPermissions(userId, data);
+    return data;
   }
 }

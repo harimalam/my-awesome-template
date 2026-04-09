@@ -71,4 +71,16 @@ export class UsersCache {
       this.LIST_TTL,
     );
   }
+
+  async getUserPermissions(userId: string): Promise<{ role: string; permissions: string[] } | null> {
+    return this.redisService.get<{ role: string; permissions: string[] }>(`user:${userId}:permissions`);
+  }
+
+  async setUserPermissions(userId: string, data: { role: string; permissions: string[] }): Promise<void> {
+    await this.redisService.set(`user:${userId}:permissions`, data, this.USER_TTL);
+  }
+
+  async invalidateUserPermissions(userId: string): Promise<void> {
+    await this.redisService.del(`user:${userId}:permissions`);
+  }
 }

@@ -22,6 +22,8 @@ export const envSchema = z.object({
   MAIL_PASS: z.string(),
   MAIL_FROM: z.string(),
   MAIL_SECURE: z.coerce.boolean().default(false),
+  JWT_SECRET: z.string().describe('Secret key for JWT signing'),
+  JWT_EXPIRES_IN: z.string().default('24h'),
 });
 
 export type Env = z.infer<typeof envSchema>;

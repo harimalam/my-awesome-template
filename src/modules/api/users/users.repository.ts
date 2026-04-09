@@ -17,6 +17,7 @@ export class UsersRepository {
     id: true,
     name: true,
     email: true,
+    roleId: true,
     createdAt: true,
     updatedAt: true,
   } as const;
@@ -81,6 +82,9 @@ export class UsersRepository {
         offset,
         orderBy: [orderBy === 'asc' ? asc(schema.users.id) : desc(schema.users.id)],
         columns: this.publicColumns,
+        with: {
+          role: true,
+        },
       }),
       this.db.select({ count: count() }).from(schema.users).where(this.isActive),
     ]);
@@ -108,6 +112,9 @@ export class UsersRepository {
       limit: limit + 1,
       orderBy: [orderFunc(schema.users.id)],
       columns: this.publicColumns,
+      with: {
+        role: true,
+      },
     });
 
     let nextCursor: string | null = null;
@@ -117,5 +124,30 @@ export class UsersRepository {
     }
 
     return { data: items, nextCursor };
+  }
+
+  async findUserWithPermissions(userId: string) {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      with: {
+        role: {
+          with: {
+            permissions: {
+              with: {
+                permission: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user || !user.role) return null;
+
+    return {
+      id: user.id,
+      role: user.role.name,
+      permissions: user.role.permissions.map((rp) => rp.permission.slug),
+    };
   }
 }
